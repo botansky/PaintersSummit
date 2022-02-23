@@ -25,3 +25,9 @@ void ATrackGenerator::Tick(float DeltaTime)
 
 }
 
+void ATrackGenerator::AddSplineMeshObject(int startIndex)
+{
+	//
+}
+
+
