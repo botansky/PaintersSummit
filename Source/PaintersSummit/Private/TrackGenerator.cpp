@@ -12,10 +12,11 @@ ATrackGenerator::ATrackGenerator()
 
 	SplineComponent = CreateDefaultSubobject<USplineComponent>("Spline");
 	SetRootComponent(SplineComponent); //set up root for spline component
+	SplineComponent->SetMobility(EComponentMobility::Static);
 }
 
 void ATrackGenerator::OnConstruction(const FTransform& Transform) {
-	
+
 	//loop through already constructed spline points and draw mesh components
 	int PtCount = SplineComponent->GetNumberOfSplinePoints() - 1;
 	for (int ptInd = 0; ptInd < PtCount; ptInd++) {
@@ -40,16 +41,20 @@ void ATrackGenerator::Tick(float DeltaTime)
 void ATrackGenerator::AddSplineMeshObject(int StartIndex)
 {
 	if (SplineMesh) {
-		int EndIndex = StartIndex++;
+		int EndIndex = StartIndex+1;
 
 		//create a spline mesh component
-		USplineMeshComponent* SplineMeshComponent = NewObject<USplineMeshComponent>(this, USplineComponent::StaticClass());
+		USplineMeshComponent* SplineMeshComponent = NewObject<USplineMeshComponent>(this, USplineMeshComponent::StaticClass());
 		SplineMeshComponent->SetMobility(EComponentMobility::Static);
 		SplineMeshComponent->SetStaticMesh(SplineMesh);
+		if (SplineMaterial) {
+			SplineMeshComponent->SetMaterial(0, SplineMaterial);
+		}
 		SplineMeshComponent->AttachToComponent(SplineComponent, FAttachmentTransformRules::KeepRelativeTransform); //TODO: confirm transformation rule
 		SplineMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision); //initally disable collisions until mesh shape is set
 		SplineMeshComponent->CreationMethod = EComponentCreationMethod::UserConstructionScript;
 		SplineMeshComponent->RegisterComponentWithWorld(GetWorld());
+		SplineMeshComponent->SetForwardAxis(ForwardVector);
 
 
 		//get start and end spline locations and tangents

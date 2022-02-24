@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/SplineComponent.h"
+#include "Components/SplineMeshComponent.h"
 #include "TrackGenerator.generated.h"
 
 USTRUCT(BlueprintType)
@@ -24,10 +25,6 @@ class PAINTERSSUMMIT_API ATrackGenerator : public AActor
 	
 public:	
 
-	UPROPERTY(EditAnywhere, Category = "Spline Piece Displacement") float xDisplacement = 200.0f;
-	UPROPERTY(EditAnywhere, Category = "Spline Piece Displacement") float yDisplacementMagnitude;
-	UPROPERTY(EditAnywhere, Category = "Spline Piece Displacement") float zDisplacement = -100.0f;
-
 	ATrackGenerator();
 
 	//enable custom construction script
@@ -45,7 +42,26 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 public:
-	UPROPERTY(VisibleAnywhere, Category = "Spline") USplineComponent* SplineComponent;
-	UPROPERTY(EditAnywhere, Category = "Spline" ) UStaticMesh* SplineMesh;
+	UPROPERTY(EditAnywhere, Category = "Spline Piece Displacement")
+	float xDisplacement = 200.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Spline Piece Displacement")
+	float yDisplacementMagnitude;
+
+	UPROPERTY(EditAnywhere, Category = "Spline Piece Displacement")
+	float zDisplacement = -100.0f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Spline")
+	USplineComponent* SplineComponent;
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Spline") 
+	UStaticMesh* SplineMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spline") 
+	class UMaterialInterface* SplineMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spline") 
+	TEnumAsByte<ESplineMeshAxis::Type> ForwardVector;
+
 	void AddSplineMeshObject(int startIndex);
 };
