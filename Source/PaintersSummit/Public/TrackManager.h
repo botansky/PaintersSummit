@@ -77,6 +77,6 @@ public:
 		TArray<FTrackData> SplineDataArray;
 
 	void AddSplineData(int StartIndex);
-	void AddSplineMeshObject(int StartIndex);
+	void AddSplineMeshObject(int StartIndex, int EndIndex);
 	FVector CalculateNewSplinePosition();
 };

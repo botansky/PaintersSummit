@@ -11,6 +11,7 @@ ATrackManager::ATrackManager()
 	PrimaryActorTick.bCanEverTick = true;
 	SplineComponent = CreateDefaultSubobject<USplineComponent>("Spline");
 	SetRootComponent(SplineComponent); //set up root for spline component
+	SplineComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	SplineComponent->SetMobility(EComponentMobility::Static);
 }
 
@@ -25,8 +26,11 @@ void ATrackManager::OnConstruction(const FTransform& Transform)
 	for (i = PlayerSplinePtPosition -1 ; i < DrawAhead + PlayerSplinePtPosition; i++)
 	{
 		AddSplineData(i + 1);
-		AddSplineMeshObject(i);
+
+		//add a spline point at the next position
+		SplineComponent->AddSplinePoint(SplineDataArray.Last().SplinePtPosition, ESplineCoordinateSpace::Local, false);
 	}
+	AddSplineMeshObject(PlayerSplinePtPosition - 1, i);
 	LastDrawn = i;  //keep last start index drawn
 }
 
@@ -50,49 +54,49 @@ void ATrackManager::AddSplineData(int StartIndex)
 	SplineDataArray.Add(SplineData);
 }
 
-void ATrackManager::AddSplineMeshObject(int StartIndex)
+void ATrackManager::AddSplineMeshObject(int StartIndex, int EndIndex)
 {
-	int EndIndex = StartIndex + 1;
 
-	//add a spline point at the next position
-	SplineComponent->AddSplinePoint(SplineDataArray.Last().SplinePtPosition, ESplineCoordinateSpace::Local, true);
-
-	if (StartIndex > 0)
-	{
-		FVector PreviousTangent = SplineComponent->GetLeaveTangentAtSplinePoint(StartIndex - 1, ESplineCoordinateSpace::Local);
-		SplineComponent->SetTangentAtSplinePoint(StartIndex, PreviousTangent, ESplineCoordinateSpace::Local, true);
-	}
-
-	//create a spline mesh component
-	USplineMeshComponent* SplineMeshComponent = NewObject<USplineMeshComponent>(this, USplineMeshComponent::StaticClass());
-	SplineMeshComponent->SetMobility(EComponentMobility::Static);
-
-	//set mesh and texture, if exists
-	if (SplineMesh) {
-
-		SplineMeshComponent->SetStaticMesh(SplineMesh);
-		if (SplineMaterial) {
-			SplineMeshComponent->SetMaterial(0, SplineMaterial);
+	for (int i = StartIndex; i < EndIndex; i++) {
+		if (i > 0)
+		{
+			FVector PreviousTangent = SplineComponent->GetLeaveTangentAtSplinePoint(i - 1, ESplineCoordinateSpace::Local);
+			SplineComponent->SetTangentAtSplinePoint(i, PreviousTangent, ESplineCoordinateSpace::Local, false);
 		}
+		SplineComponent->SetSplinePointType(i, ESplinePointType::Curve, true);
+
+		//create a spline mesh component
+		USplineMeshComponent* SplineMeshComponent = NewObject<USplineMeshComponent>(this, USplineMeshComponent::StaticClass());
+		SplineMeshComponent->SetMobility(EComponentMobility::Static);
+
+		//set mesh and texture, if exists
+		if (SplineMesh) {
+
+			SplineMeshComponent->SetStaticMesh(SplineMesh);
+			if (SplineMaterial) {
+				SplineMeshComponent->SetMaterial(0, SplineMaterial);
+			}
+		}
+
+		//Set Component Details
+		SplineMeshComponent->AttachToComponent(SplineComponent, FAttachmentTransformRules::KeepRelativeTransform); //TODO: confirm transformation rule
+		SplineMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision); //initally disable collisions until mesh shape is set
+		SplineMeshComponent->CreationMethod = EComponentCreationMethod::UserConstructionScript;
+		SplineMeshComponent->RegisterComponentWithWorld(GetWorld());
+		SplineMeshComponent->SetForwardAxis(ForwardVector);
+
+
+		//get start and end spline locations and tangents
+		const FVector StartLoc = SplineComponent->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::Local);
+		const FVector EndLoc = SplineComponent->GetLocationAtSplinePoint(i+1, ESplineCoordinateSpace::Local);
+		const FVector StartTan = SplineComponent->GetTangentAtSplinePoint(i, ESplineCoordinateSpace::Local);
+		const FVector EndTan = SplineComponent->GetTangentAtSplinePoint(i+1, ESplineCoordinateSpace::Local);
+		SplineMeshComponent->SetStartAndEnd(StartLoc, StartTan, EndLoc, EndTan);
+
+		//enable collisions now that shape exists
+		SplineMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	}
 
-	//Set Component Details
-	SplineMeshComponent->AttachToComponent(SplineComponent, FAttachmentTransformRules::KeepRelativeTransform); //TODO: confirm transformation rule
-	SplineMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision); //initally disable collisions until mesh shape is set
-	SplineMeshComponent->CreationMethod = EComponentCreationMethod::UserConstructionScript;
-	SplineMeshComponent->RegisterComponentWithWorld(GetWorld());
-	SplineMeshComponent->SetForwardAxis(ForwardVector);
-
-
-	//get start and end spline locations and tangents
-	const FVector StartLoc = SplineComponent->GetLocationAtSplinePoint(StartIndex, ESplineCoordinateSpace::Local);
-	const FVector EndLoc = SplineComponent->GetLocationAtSplinePoint(EndIndex, ESplineCoordinateSpace::Local);
-	const FVector StartTan = SplineComponent->GetTangentAtSplinePoint(StartIndex, ESplineCoordinateSpace::Local);
-	const FVector EndTan = SplineComponent->GetTangentAtSplinePoint(EndIndex, ESplineCoordinateSpace::Local);
-	SplineMeshComponent->SetStartAndEnd(StartLoc, StartTan, EndLoc, EndTan);
-
-	//enable collisions now that shape exists
-	SplineMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
 
 FVector ATrackManager::CalculateNewSplinePosition()
