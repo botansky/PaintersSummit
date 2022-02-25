@@ -12,47 +12,56 @@ ATrackManager::ATrackManager()
 	SplineComponent = CreateDefaultSubobject<USplineComponent>("Spline");
 	SetRootComponent(SplineComponent); //set up root for spline component
 	SplineComponent->SetMobility(EComponentMobility::Static);
-
-	FTrackData InitTrackData;
-	InitTrackData.SplinePtIndex = 0;
-	InitTrackData.Drawn = false;
-	InitTrackData.SplinePtPosition = this->GetTransform().GetLocation();
-	SplineDataArray.Add(InitTrackData);
 }
 
-void ATrackManager::OnConstruction(const FTransform& Transform) {
+void ATrackManager::OnConstruction(const FTransform& Transform) 
+{
+	//ensure spline data array and spline points are empty
+	SplineDataArray.Reset();
+	SplineComponent->ClearSplinePoints();
 
-	//default second spline point position
-	SplineComponent->SetLocationAtSplinePoint(1, CalculateNewSplinePosition(), ESplineCoordinateSpace::Local, true);
-
-	//loop through already constructed spline points and draw mesh components
-	int PtCount = SplineComponent->GetNumberOfSplinePoints() - 1;
-	for (int ptInd = 0; ptInd < PtCount; ptInd++) {
-		AddSplineMeshObject(ptInd);
+	//for each point from the player to the draw-ahead distance draw a track mesh
+	int i;
+	for (i = PlayerSplinePtPosition -1 ; i < DrawAhead + PlayerSplinePtPosition; i++)
+	{
+		AddSplineData(i + 1);
+		AddSplineMeshObject(i);
 	}
+	LastDrawn = i;  //keep last start index drawn
 }
 
 // Called when the game starts or when spawned
 void ATrackManager::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 // Called every frame
 void ATrackManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
 
+void ATrackManager::AddSplineData(int StartIndex)
+{
+	FTrackData SplineData;
+	SplineData.SplinePtIndex = StartIndex;
+	SplineData.SplinePtPosition = CalculateNewSplinePosition();
+	SplineDataArray.Add(SplineData);
 }
 
 void ATrackManager::AddSplineMeshObject(int StartIndex)
 {
-	int NextIndex = StartIndex + 1;
-
-	//update spline index and positon of next spline point
 	int EndIndex = StartIndex + 1;
-	SplineComponent->SetLocationAtSplinePoint(EndIndex, CalculateNewSplinePosition(), ESplineCoordinateSpace::Local, true);
+
+	//add a spline point at the next position
+	SplineComponent->AddSplinePoint(SplineDataArray.Last().SplinePtPosition, ESplineCoordinateSpace::Local, true);
+
+	if (StartIndex > 0)
+	{
+		FVector PreviousTangent = SplineComponent->GetLeaveTangentAtSplinePoint(StartIndex - 1, ESplineCoordinateSpace::Local);
+		SplineComponent->SetTangentAtSplinePoint(StartIndex, PreviousTangent, ESplineCoordinateSpace::Local, true);
+	}
 
 	//create a spline mesh component
 	USplineMeshComponent* SplineMeshComponent = NewObject<USplineMeshComponent>(this, USplineMeshComponent::StaticClass());
@@ -84,25 +93,25 @@ void ATrackManager::AddSplineMeshObject(int StartIndex)
 
 	//enable collisions now that shape exists
 	SplineMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-
-	//add component to track data array
-	FTrackData TrackData;
-	TrackData.SplinePtIndex = StartIndex;
-	TrackData.Drawn = true;
-	TrackData.SplinePtPosition = StartLoc;
-	SplineDataArray.Add(TrackData);
 }
 
 FVector ATrackManager::CalculateNewSplinePosition()
 {
-	//get position last index in TrackData array (last element)
-	FVector LastPosition = SplineDataArray.Last().SplinePtPosition;
+	FVector SplinePtPosition;
+	if (SplineDataArray.Num() < 1) {
+		SplinePtPosition = FVector(0.0f, 0.0f, 0.0f);
+	}
+	else
+	{
+		//get position last index in TrackData array (last element)
+		FVector LastPosition = SplineDataArray.Last().SplinePtPosition;
 
-	//apply displacement to new position
-	FVector NewPosition = FVector(LastPosition.X + xDisplacement,
-		LastPosition.Y + (rand() % 2 * yDisplacementMagnitude) - yDisplacementMagnitude, LastPosition.Z + zDisplacement);
+		//apply displacement to new position
+		SplinePtPosition = FVector(LastPosition.X + xDisplacement,
+			LastPosition.Y + (rand() % (int)(2.0f * yDisplacementMagnitude)) - yDisplacementMagnitude, LastPosition.Z + zDisplacement);
+	}
 
-	return NewPosition;
+	return SplinePtPosition;
 }
 
 

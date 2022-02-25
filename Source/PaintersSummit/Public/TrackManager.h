@@ -32,7 +32,14 @@ public:
 
 protected:
 
-	UPROPERTY(VisibleAnywhere, Category = "Track Data") TArray<FTrackData> trackDataArray;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly , Category = "Track Generation")
+		int LastDrawn = -1;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly , Category = "Track Generation")
+		int LastRemoved = -1;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Track Generation")
+		int PlayerSplinePtPosition = 0;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -43,13 +50,13 @@ public:
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Spline Piece Displacement")
-		float xDisplacement = 200.0f;
+		float xDisplacement = 1000.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Spline Piece Displacement")
-		float yDisplacementMagnitude;
+		float yDisplacementMagnitude = 200.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Spline Piece Displacement")
-		float zDisplacement = -100.0f;
+		float zDisplacement = -200.0f;
 
 	UPROPERTY(VisibleAnywhere, Category = "Spline")
 		USplineComponent* SplineComponent;
@@ -63,9 +70,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spline")
 		TEnumAsByte<ESplineMeshAxis::Type> ForwardVector;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spline")
+		int DrawAhead = 10;
+
 	UPROPERTY(VisibleAnywhere, Category = "Track Data")
 		TArray<FTrackData> SplineDataArray;
 
-	void AddSplineMeshObject(int startIndex);
+	void AddSplineData(int StartIndex);
+	void AddSplineMeshObject(int StartIndex);
 	FVector CalculateNewSplinePosition();
 };
