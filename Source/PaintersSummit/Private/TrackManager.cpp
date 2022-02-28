@@ -21,17 +21,8 @@ void ATrackManager::OnConstruction(const FTransform& Transform)
 	SplineDataArray.Reset();
 	SplineComponent->ClearSplinePoints();
 
-	//for each point from the player to the draw-ahead distance draw a track mesh
-	int i;
-	for (i = PlayerSplinePtPosition -1 ; i < DrawAhead + PlayerSplinePtPosition; i++)
-	{
-		AddSplineData(i + 1);
-
-		//add a spline point at the next position
-		SplineComponent->AddSplinePoint(SplineDataArray.Last().SplinePtPosition, ESplineCoordinateSpace::Local, false);
-	}
-	AddSplineMeshObject(PlayerSplinePtPosition - 1, i);
-	LastDrawn = i;  //keep last start index drawn
+	//draw first section of spline
+	DrawSplineBetween(PlayerSplinePtPosition - 1, DrawAhead + PlayerSplinePtPosition);
 }
 
 // Called when the game starts or when spawned
@@ -70,16 +61,21 @@ void ATrackManager::AddSplineMeshObject(int StartIndex, int EndIndex)
 		SplineMeshComponent->SetMobility(EComponentMobility::Static);
 
 		//set mesh and texture, if exists
-		if (SplineMesh) {
-
-			SplineMeshComponent->SetStaticMesh(SplineMesh);
+		if (SplineMesh && SplineRampMesh) {
+			if (i < EndIndex - 1) {
+				SplineMeshComponent->SetStaticMesh(SplineMesh);
+			}
+			else
+			{
+				SplineMeshComponent->SetStaticMesh(SplineRampMesh);
+			}
 			if (SplineMaterial) {
 				SplineMeshComponent->SetMaterial(0, SplineMaterial);
 			}
 		}
 
 		//Set Component Details
-		SplineMeshComponent->AttachToComponent(SplineComponent, FAttachmentTransformRules::KeepRelativeTransform); //TODO: confirm transformation rule
+		SplineMeshComponent->AttachToComponent(SplineComponent, FAttachmentTransformRules::KeepRelativeTransform);
 		SplineMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision); //initally disable collisions until mesh shape is set
 		SplineMeshComponent->CreationMethod = EComponentCreationMethod::UserConstructionScript;
 		SplineMeshComponent->RegisterComponentWithWorld(GetWorld());
@@ -97,6 +93,21 @@ void ATrackManager::AddSplineMeshObject(int StartIndex, int EndIndex)
 		SplineMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	}
 
+}
+
+void ATrackManager::DrawSplineBetween(int StartIndex, int EndIndex)
+{
+	//for each point from the player to the draw-ahead distance draw a track mesh
+	int i;
+	for (i = StartIndex - 1; i < EndIndex; i++)
+	{
+		AddSplineData(i + 1);
+
+		//add a spline point at the next position
+		SplineComponent->AddSplinePoint(SplineDataArray.Last().SplinePtPosition, ESplineCoordinateSpace::Local, false);
+	}
+	AddSplineMeshObject(PlayerSplinePtPosition - 1, i);
+	LastDrawn = i;  //keep last start index drawn
 }
 
 FVector ATrackManager::CalculateNewSplinePosition()

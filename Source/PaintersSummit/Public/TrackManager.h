@@ -65,6 +65,9 @@ public:
 		UStaticMesh* SplineMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spline")
+		UStaticMesh* SplineRampMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spline")
 		class UMaterialInterface* SplineMaterial;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spline")
@@ -78,5 +81,6 @@ public:
 
 	void AddSplineData(int StartIndex);
 	void AddSplineMeshObject(int StartIndex, int EndIndex);
+	void DrawSplineBetween(int StartIndex, int EndIndex);
 	FVector CalculateNewSplinePosition();
 };
