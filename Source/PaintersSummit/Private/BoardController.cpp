@@ -40,5 +40,10 @@ void ABoardController::MoveHorizontal(float HorizontalMovement)
 
 void ABoardController::MoveForward()
 {
-	AddMovementInput(GetActorForwardVector(), (ForwardMovementBaseSpeed + GetActorTransform().GetLocation().X / 10000.0f));
+	AddMovementInput(GetActorForwardVector(), (ForwardMovementBaseSpeed));
+}
+
+FVector ABoardController::GetPlayerPosition()
+{
+	return this->GetTransform().GetLocation();
 }

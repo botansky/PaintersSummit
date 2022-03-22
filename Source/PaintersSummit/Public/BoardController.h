@@ -36,4 +36,6 @@ private:
 	void MoveHorizontal(float HorizontalMovement);
 	void MoveForward();
 
+public:
+	FVector GetPlayerPosition();
 };

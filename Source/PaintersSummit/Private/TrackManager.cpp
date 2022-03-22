@@ -1,8 +1,9 @@
 // Author: Matan Botansky
 
-
 #include "TrackManager.h"
 #include "Components/SplineMeshComponent.h"
+#include "Kismet/GameplayStatics.h"
+
 
 // Sets default values
 ATrackManager::ATrackManager()
@@ -13,6 +14,10 @@ ATrackManager::ATrackManager()
 	SetRootComponent(SplineComponent); //set up root for spline component
 	SplineComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	SplineComponent->SetMobility(EComponentMobility::Static);
+
+	//get player object reference
+	Player = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
+	
 }
 
 void ATrackManager::OnConstruction(const FTransform& Transform) 
@@ -35,6 +40,10 @@ void ATrackManager::BeginPlay()
 void ATrackManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	SetPlayerSplinePtPostion();
+	if (LastDrawn - PlayerSplinePtPosition == 5) {
+		DrawSplineBetween(LastDrawn, LastDrawn + DrawAhead);
+	}
 }
 
 void ATrackManager::AddSplineData(int StartIndex)
@@ -62,12 +71,12 @@ void ATrackManager::AddSplineMeshObject(int StartIndex, int EndIndex)
 
 		//set mesh and texture, if exists
 		if (SplineMesh && SplineRampMesh) {
-			if (i < EndIndex - 1) {
-				SplineMeshComponent->SetStaticMesh(SplineMesh);
+			if (i % 8 == 0 && i != 0) {
+				SplineMeshComponent->SetStaticMesh(SplineRampMesh);
 			}
 			else
 			{
-				SplineMeshComponent->SetStaticMesh(SplineRampMesh);
+				SplineMeshComponent->SetStaticMesh(SplineMesh);
 			}
 			if (SplineMaterial) {
 				SplineMeshComponent->SetMaterial(0, SplineMaterial);
@@ -76,11 +85,10 @@ void ATrackManager::AddSplineMeshObject(int StartIndex, int EndIndex)
 
 		//Set Component Details
 		SplineMeshComponent->AttachToComponent(SplineComponent, FAttachmentTransformRules::KeepRelativeTransform);
-		SplineMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision); //initally disable collisions until mesh shape is set
+		SplineMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics); //initally disable collisions until mesh shape is set
 		SplineMeshComponent->CreationMethod = EComponentCreationMethod::UserConstructionScript;
 		SplineMeshComponent->RegisterComponentWithWorld(GetWorld());
 		SplineMeshComponent->SetForwardAxis(ForwardVector);
-
 
 		//get start and end spline locations and tangents
 		const FVector StartLoc = SplineComponent->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::Local);
@@ -106,8 +114,10 @@ void ATrackManager::DrawSplineBetween(int StartIndex, int EndIndex)
 		//add a spline point at the next position
 		SplineComponent->AddSplinePoint(SplineDataArray.Last().SplinePtPosition, ESplineCoordinateSpace::Local, false);
 	}
-	AddSplineMeshObject(PlayerSplinePtPosition - 1, i);
+
+	AddSplineMeshObject(StartIndex, EndIndex);
 	LastDrawn = i;  //keep last start index drawn
+
 }
 
 FVector ATrackManager::CalculateNewSplinePosition()
@@ -127,6 +137,11 @@ FVector ATrackManager::CalculateNewSplinePosition()
 	}
 
 	return SplinePtPosition;
+}
+
+void ATrackManager::SetPlayerSplinePtPostion()
+{
+	PlayerSplinePtPosition = GetWorld()->GetFirstPlayerController()->GetPawn()->GetActorLocation().X / xDisplacement;
 }
 
 
