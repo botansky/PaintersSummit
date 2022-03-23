@@ -41,6 +41,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Track Generation")
 		int PlayerSplinePtPosition = 0;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Track Generation")
+		ACharacter* Player;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -74,13 +77,19 @@ public:
 		TEnumAsByte<ESplineMeshAxis::Type> ForwardVector;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spline")
-		int DrawAhead = 10;
+		int DrawAhead = 25;
 
 	UPROPERTY(VisibleAnywhere, Category = "Track Data")
 		TArray<FTrackData> SplineDataArray;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Obstacles")
+		TSubclassOf<AActor> ObstacleBlueprint;
+
 
 	void AddSplineData(int StartIndex);
 	void AddSplineMeshObject(int StartIndex, int EndIndex);
 	void DrawSplineBetween(int StartIndex, int EndIndex);
 	FVector CalculateNewSplinePosition();
+	void SetPlayerSplinePtPostion();
+	UFUNCTION() void InstantiatePaintBall(FVector Location);
 };

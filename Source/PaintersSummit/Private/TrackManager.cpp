@@ -17,7 +17,6 @@ ATrackManager::ATrackManager()
 
 	//get player object reference
 	Player = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
-	
 }
 
 void ATrackManager::OnConstruction(const FTransform& Transform) 
@@ -25,7 +24,6 @@ void ATrackManager::OnConstruction(const FTransform& Transform)
 	//ensure spline data array and spline points are empty
 	SplineDataArray.Reset();
 	SplineComponent->ClearSplinePoints();
-
 	//draw first section of spline
 	DrawSplineBetween(PlayerSplinePtPosition - 1, DrawAhead + PlayerSplinePtPosition);
 }
@@ -97,10 +95,14 @@ void ATrackManager::AddSplineMeshObject(int StartIndex, int EndIndex)
 		const FVector EndTan = SplineComponent->GetTangentAtSplinePoint(i+1, ESplineCoordinateSpace::Local);
 		SplineMeshComponent->SetStartAndEnd(StartLoc, StartTan, EndLoc, EndTan);
 
+		if (i % 2 == 1 && i != 1 && i > 4) { //spawn obstacle
+			FVector ObjectTargetLocation = (StartLoc + EndLoc) * 0.5f;
+			InstantiatePaintBall(ObjectTargetLocation);
+		}
+
 		//enable collisions now that shape exists
 		SplineMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	}
-
 }
 
 void ATrackManager::DrawSplineBetween(int StartIndex, int EndIndex)
@@ -132,8 +134,11 @@ FVector ATrackManager::CalculateNewSplinePosition()
 		FVector LastPosition = SplineDataArray.Last().SplinePtPosition;
 
 		//apply displacement to new position
-		SplinePtPosition = FVector(LastPosition.X + xDisplacement,
-			LastPosition.Y + (rand() % (int)(2.0f * yDisplacementMagnitude)) - yDisplacementMagnitude, LastPosition.Z + zDisplacement);
+		SplinePtPosition = FVector(
+			LastPosition.X + xDisplacement, 
+			LastPosition.Y + (rand() % (int)(2.0f * yDisplacementMagnitude)) - yDisplacementMagnitude, 
+			LastPosition.Z + zDisplacement 
+		);
 	}
 
 	return SplinePtPosition;
@@ -144,4 +149,9 @@ void ATrackManager::SetPlayerSplinePtPostion()
 	PlayerSplinePtPosition = GetWorld()->GetFirstPlayerController()->GetPawn()->GetActorLocation().X / xDisplacement;
 }
 
-
+void ATrackManager::InstantiatePaintBall(FVector Location)
+{
+	FActorSpawnParameters SpawnParameters;
+	AActor* ActorRef = GetWorld()->SpawnActor<AActor>(ObstacleBlueprint);
+	ActorRef->SetActorLocation(Location);
+}
