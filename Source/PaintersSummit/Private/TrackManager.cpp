@@ -39,7 +39,7 @@ void ATrackManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	SetPlayerSplinePtPostion();
-	if (LastDrawn - PlayerSplinePtPosition == 5) {
+	if (LastDrawn - PlayerSplinePtPosition == 10) {
 		DrawSplineBetween(LastDrawn, LastDrawn + DrawAhead);
 	}
 }
@@ -99,9 +99,6 @@ void ATrackManager::AddSplineMeshObject(int StartIndex, int EndIndex)
 			FVector ObjectTargetLocation = (StartLoc + EndLoc) * 0.5f;
 			InstantiatePaintBall(ObjectTargetLocation);
 		}
-
-		//enable collisions now that shape exists
-		SplineMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	}
 }
 
@@ -152,6 +149,7 @@ void ATrackManager::SetPlayerSplinePtPostion()
 void ATrackManager::InstantiatePaintBall(FVector Location)
 {
 	FActorSpawnParameters SpawnParameters;
-	AActor* ActorRef = GetWorld()->SpawnActor<AActor>(ObstacleBlueprint);
-	ActorRef->SetActorLocation(Location);
+	FTransform NewTransform;
+	NewTransform.SetLocation(Location);
+	AActor* ActorRef = GetWorld()->SpawnActor<AActor>(ObstacleBlueprint, NewTransform, SpawnParameters);
 }
