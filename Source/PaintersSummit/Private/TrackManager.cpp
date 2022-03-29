@@ -146,6 +146,11 @@ void ATrackManager::SetPlayerSplinePtPostion()
 	PlayerSplinePtPosition = GetWorld()->GetFirstPlayerController()->GetPawn()->GetActorLocation().X / xDisplacement;
 }
 
+int ATrackManager::GetPlayerSplinePtPostion()
+{
+	return PlayerSplinePtPosition;
+}
+
 void ATrackManager::InstantiatePaintBall(FVector Location)
 {
 	FActorSpawnParameters SpawnParameters;

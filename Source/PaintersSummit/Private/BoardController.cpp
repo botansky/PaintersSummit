@@ -2,6 +2,9 @@
 
 
 #include "BoardController.h"
+#include "Components/CapsuleComponent.h"
+#include "TrackManager.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ABoardController::ABoardController()
@@ -15,6 +18,7 @@ ABoardController::ABoardController()
 void ABoardController::BeginPlay()
 {
 	Super::BeginPlay();
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ABoardController::OnOverlapBegin);
 }
 
 // Called every frame
@@ -22,6 +26,12 @@ void ABoardController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	MoveForward();
+
+	FVector CurrentPos = GetWorld()->GetFirstPlayerController()->GetPawn()->GetActorLocation();
+	float PlayerMinZPos = ((int)(CurrentPos.X / 1000) * -500.0f) - 500.0f;
+	if (CurrentPos.Z < PlayerMinZPos) {
+		GameOver();
+	}
 }
 
 // Called to bind functionality to input
@@ -29,6 +39,15 @@ void ABoardController::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	InputComponent->BindAxis("Horizontal", this, &ABoardController::MoveHorizontal);
+}
+
+void ABoardController::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (!OtherActor->IsA(ATrackManager::StaticClass())) {
+		GameOver();
+	}
+
+	//FTimerHandle NewTimerHandle;
 }
 
 void ABoardController::MoveHorizontal(float HorizontalMovement)
@@ -46,4 +65,9 @@ void ABoardController::MoveForward()
 FVector ABoardController::GetPlayerPosition()
 {
 	return this->GetTransform().GetLocation();
+}
+
+void ABoardController::GameOver()
+{
+	isAlive = false;
 }

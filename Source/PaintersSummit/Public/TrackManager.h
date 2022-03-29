@@ -91,5 +91,6 @@ public:
 	void DrawSplineBetween(int StartIndex, int EndIndex);
 	FVector CalculateNewSplinePosition();
 	void SetPlayerSplinePtPostion();
+	int GetPlayerSplinePtPostion();
 	UFUNCTION() void InstantiatePaintBall(FVector Location);
 };
